@@ -3,6 +3,7 @@ package com.example.hifiplayer
 import android.Manifest
 import android.content.pm.PackageManager
 import android.media.audiofx.Equalizer
+import android.media.audiofx.LoudnessEnhancer
 import android.media.audiofx.Visualizer
 import android.os.Bundle
 import android.provider.MediaStore
@@ -13,7 +14,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -24,11 +25,14 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.media3.common.MediaItem
+import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
+import kotlinx.coroutines.delay
 import java.io.File
 import kotlin.math.cos
 import kotlin.math.sin
@@ -36,6 +40,7 @@ import kotlin.math.sin
 class MainActivity : ComponentActivity() {
     private lateinit var player: ExoPlayer
     private var eq: Equalizer? = null
+    private var loud: LoudnessEnhancer? = null
     private var viz: Visualizer? = null
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -46,79 +51,103 @@ class MainActivity : ComponentActivity() {
         setContent {
             val ctx = LocalContext.current
             var songs by remember { mutableStateOf(listOf<File>()) }
-            var now by remember { mutableStateOf<File?>(null) }
+            var idx by remember { mutableStateOf(-1) }
             var isPlay by remember { mutableStateOf(false) }
-            var status by remember { mutableStateOf("Pronto") }
-            var fft by remember { mutableStateOf(List(50){0f}) }
+            var pos by remember { mutableStateOf(0L) }
+            var dur by remember { mutableStateOf(0L) }
+            var fft by remember { mutableStateOf(List(50){0.08f}) }
+            var vuL by remember { mutableStateOf(0.2f) }
+            var vuR by remember { mutableStateOf(0.2f) }
+            var volume by remember { mutableStateOf(0.8f) }
+            var highGain by remember { mutableStateOf(true) }
+            fun playAt(i:Int){ if(i in songs.indices){ idx=i; player.setMediaItem(MediaItem.fromUri(songs[i].toURI().toString())); player.prepare(); player.play() } }
+            LaunchedEffect(volume){ player.volume=volume }
+            LaunchedEffect(player){
+                player.addListener(object: Player.Listener{ override fun onIsPlayingChanged(p:Boolean){ isPlay=p } override fun onPlaybackStateChanged(s:Int){ dur=player.duration.coerceAtLeast(0L) } })
+                while(true){ pos=player.currentPosition; dur=player.duration.coerceAtLeast(0L); if(pos>=dur-600 && dur>1000 && idx+1<songs.size) playAt(idx+1); delay(200) }
+            }
             LaunchedEffect(player.audioSessionId){
                 try{
                     eq=Equalizer(0,player.audioSessionId).apply{enabled=true}
+                    loud=LoudnessEnhancer(player.audioSessionId).apply{enabled=highGain}
                     viz=Visualizer(player.audioSessionId).apply{
                         captureSize=Visualizer.getCaptureSizeRange()[1]
                         setDataCaptureListener(object:Visualizer.OnDataCaptureListener{
                             override fun onWaveFormDataCapture(v:Visualizer?,w:ByteArray?,r:Int){}
-                            override fun onFftDataCapture(v:Visualizer?,f:ByteArray?,r:Int){ f?.let{ fft=it.take(50).map{ b->(b.toInt() and 0xFF)/128f } } }
+                            override fun onFftDataCapture(v:Visualizer?,f:ByteArray?,r:Int){ f?.let{ val l=it.take(50).map{ b-> ((b.toInt() and 0xFF)-128).let{ kotlin.math.abs(it)/32f }.coerceIn(0.05f,1f) }; fft=l; vuL=l.take(12).average().toFloat(); vuR=l.takeLast(12).average().toFloat() } }
                         }, Visualizer.getMaxCaptureRate()/2, false, true)
                         enabled=true
                     }
                 }catch(_:Exception){}
             }
-            MaterialTheme{
+            MaterialTheme(colorScheme=darkColorScheme(background=Color(0xFF0A0A0A))){
                 Box(Modifier.fillMaxSize().background(Color(0xFF0A0A0A))){
-                Column(Modifier.padding(12.dp)){
-                    Text("FLAC 24-bit 96kHz", color=Color(0xFF00E5FF), fontSize=11.sp, modifier=Modifier.clip(RoundedCornerShape(8.dp)).background(Color(0xFF1A2A2A)).padding(6.dp))
-                    Text(now?.name?:"Dream impossible.wav", color=Color.White, fontSize=18.sp, modifier=Modifier.padding(top=8.dp))
-                    Text("PCM • 96.0 kHz • 24BIT • STEREO", color=Color.Gray, fontSize=10.sp)
-                    Row(Modifier.fillMaxWidth().padding(top=12.dp), horizontalArrangement=Arrangement.SpaceEvenly){
-                        repeat(2){
-                            Box(Modifier.size(140.dp).clip(RoundedCornerShape(70.dp)).background(Color(0xFF1A1A1A)), contentAlignment=Alignment.Center){
-                                Canvas(Modifier.size(120.dp)){
-                                    drawCircle(Color(0xFFC9A84C), radius=size.minDimension/2, style=androidx.compose.ui.graphics.drawscope.Stroke(4.dp.toPx()))
-                                    val level=if(isPlay) fft.random()*0.8f else 0.1f
-                                    val angle=-120+level*120
-                                    val rad=Math.toRadians(angle.toDouble())
-                                    val x=center.x+cos(rad).toFloat()*50
-                                    val y=center.y+sin(rad).toFloat()*50
-                                    drawLine(Color(0xFFFFE082), center, Offset(x,y), strokeWidth=2.dp.toPx(), cap=StrokeCap.Round)
+                Column(Modifier.padding(12.dp).fillMaxSize()){
+                    // HEADER igual foto
+                    Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Color(0xFF1A1A1A)).padding(12.dp)){
+                        Column{
+                            Text("NOW PLAYING", color=Color(0xFFC9A84C), fontSize=10.sp, letterSpacing=2.sp, modifier=Modifier.align(Alignment.CenterHorizontally))
+                            Text(songs.getOrNull(idx)?.name?:"Dream impossible.wav", color=Color.White, fontSize=18.sp, fontWeight=FontWeight.Bold, modifier=Modifier.padding(top=4.dp))
+                            Text("Dreamscape • Impossible Dreams • 24-bit/96kHz FLAC", color=Color.Gray, fontSize=11.sp)
+                        }
+                    }
+                    // VU METERS igual foto - L R com -20 e +3
+                    Box(Modifier.fillMaxWidth().padding(top=10.dp).clip(RoundedCornerShape(12.dp)).background(Color(0xFF111111)).padding(8.dp)){
+                        Column{
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement=Arrangement.SpaceBetween){ Text("L", color=Color(0xFF00E5FF), fontSize=12.sp); Text("R", color=Color(0xFF00E5FF), fontSize=12.sp) }
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement=Arrangement.SpaceEvenly){
+                                listOf(vuL, vuR).forEach{ level->
+                                    Box(Modifier.size(140.dp), contentAlignment=Alignment.Center){
+                                        Canvas(Modifier.fillMaxSize()){
+                                            drawCircle(Color(0xFFC9A84C), radius=size.minDimension/2, style=androidx.compose.ui.graphics.drawscope.Stroke(3.dp.toPx()))
+                                            // escala igual foto
+                                            for(i in -20..3){ val ang=-130 + ((i+20)/23f)*260f; val rad=Math.toRadians(ang.toDouble()-90); val r1=size.minDimension/2-6; val r2=size.minDimension/2-14; val col=if(i>0) Color.Red else Color.White; drawLine(col, center+Offset(cos(rad).toFloat()*r2, sin(rad).toFloat()*r2), center+Offset(cos(rad).toFloat()*r1, sin(rad).toFloat()*r1), 1f.dp.toPx()) }
+                                            val ang=-130+level.coerceIn(0f,1f)*260f; val rad=Math.toRadians(ang.toDouble()-90); val x=center.x+cos(rad).toFloat()*45; val y=center.y+sin(rad).toFloat()*45; drawLine(Color.Black, center, Offset(x,y), 3.dp.toPx(), cap=StrokeCap.Round); drawCircle(Color(0xFF222222), 10.dp.toPx())
+                                        }
+                                        Column(Modifier.align(Alignment.Center).padding(top=30.dp), horizontalAlignment=Alignment.CenterHorizontally){ Text("dB", color=Color.Gray, fontSize=8.sp); Row(horizontalArrangement=Arrangement.spacedBy(24.dp)){ Text("-20", color=Color.White, fontSize=9.sp); Text("+3", color=Color.Red, fontSize=9.sp) } }
+                                    }
                                 }
                             }
                         }
                     }
-                    Row(Modifier.fillMaxWidth().height(80.dp).padding(top=12.dp), horizontalArrangement=Arrangement.SpaceEvenly, verticalAlignment=Alignment.Bottom){
-                        fft.forEach{ h-> Box(Modifier.width(4.dp).height((4+h*70).dp).clip(RoundedCornerShape(2.dp)).background(Color(0xFF00E5FF))) }
+                    // ANALISADOR CIANO igual foto
+                    Box(Modifier.fillMaxWidth().height(130.dp).padding(top=8.dp).clip(RoundedCornerShape(12.dp)).background(Color(0xFF0D0D0D))){
+                        Row(Modifier.fillMaxSize().padding(8.dp), verticalAlignment=Alignment.Bottom, horizontalArrangement=Arrangement.SpaceEvenly){
+                            fft.forEach{ h-> Box(Modifier.width(3.dp).height((5+h*110).dp).clip(RoundedCornerShape(2.dp)).background(Color(0xFF4DD0E1).copy(alpha=0.5f + h*0.5f))) }
+                        }
                     }
-                    Row(Modifier.fillMaxWidth().padding(top=12.dp), horizontalArrangement=Arrangement.SpaceBetween){ Text("01:23", color=Color.White); Text("-02:22", color=Color.Gray) }
-                    Slider(value=0.3f, onValueChange={}, colors=SliderDefaults.colors(activeTrackColor=Color(0xFF00E5FF)))
-                    Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){
-                        FilterChip(onClick={}, label={Text("HIGH GAIN")}, selected=true)
-                        FilterChip(onClick={}, label={Text("EQ FLAT")}, selected=false)
-                        Text("BITRATE 4608 kbps", color=Color.Gray, fontSize=10.sp, modifier=Modifier.padding(top=12.dp))
+                    // TIMELINE 01:23 -02:22
+                    Column(Modifier.padding(top=8.dp)){
+                        Slider(value=if(dur>0) pos.toFloat()/dur else 0f, onValueChange={ player.seekTo((it*dur).toLong()) }, colors=SliderDefaults.colors(activeTrackColor=Color(0xFF7DD3D8), inactiveTrackColor=Color(0xFF2A2A2A), thumbColor=Color(0xFF7DD3D8)))
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement=Arrangement.SpaceBetween){ fun f(m:Long)="%02d:%02d".format((m/1000/60).toInt(),(m/1000%60).toInt()); Text(f(pos), color=Color.Gray, fontSize=12.sp); Text("-"+f((dur-pos).coerceAtLeast(0L)), color=Color.Gray, fontSize=12.sp) }
                     }
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement=Arrangement.SpaceEvenly, verticalAlignment=Alignment.CenterVertically){
-                        IconButton(onClick={}){ Text("⏮", color=Color.White, fontSize=24.sp) }
-                        Button(onClick={ if(player.isPlaying){player.pause(); isPlay=false} else {player.play(); isPlay=true} }, modifier=Modifier.size(64.dp), shape=RoundedCornerShape(32.dp)){ Text(if(isPlay)"⏸" else "▶", fontSize=24.sp) }
-                        IconButton(onClick={}){ Text("⏭", color=Color.White, fontSize=24.sp) }
+                    // VOLUME NOVO
+                    Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(Color(0xFF1A1A1A)).padding(horizontal=10.dp, vertical=4.dp), verticalAlignment=Alignment.CenterVertically){
+                        Text("🔈", fontSize=12.sp); Slider(value=volume, onValueChange={volume=it}, modifier=Modifier.weight(1f), colors=SliderDefaults.colors(activeTrackColor=Color(0xFFC9A84C), thumbColor=Color.White)); Text("${(volume*100).toInt()}%", color=Color.White, fontSize=11.sp)
                     }
+                    // CONTROLES << || >>
+                    Row(Modifier.fillMaxWidth().padding(top=8.dp), horizontalArrangement=Arrangement.SpaceEvenly, verticalAlignment=Alignment.CenterVertically){
+                        IconButton(onClick={ if(idx>0) playAt(idx-1) }){ Text("◀◀", color=Color(0xFF4A6A6A), fontSize=22.sp) }
+                        Button(onClick={ if(player.isPlaying) player.pause() else { if(idx==-1 && songs.isNotEmpty()) playAt(0) else player.play() } }, modifier=Modifier.size(56.dp), shape=RoundedCornerShape(28.dp), colors=ButtonDefaults.buttonColors(containerColor=Color(0xFF4DD0E1))){ Text(if(isPlay)"❚❚" else "▶", color=Color.Black, fontSize=18.sp) }
+                        IconButton(onClick={ if(idx+1<songs.size) playAt(idx+1) }){ Text("▶▶", color=Color(0xFF4A6A6A), fontSize=22.sp) }
+                    }
+                    // RODAPÉ igual foto
+                    Column(Modifier.fillMaxWidth().padding(top=12.dp).clip(RoundedCornerShape(8.dp)).background(Color(0xFF0F0F0F)).padding(10.dp)){
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement=Arrangement.SpaceBetween){
+                            Row(verticalAlignment=Alignment.CenterVertically, horizontalArrangement=Arrangement.spacedBy(6.dp)){ Switch(checked=highGain, onCheckedChange={ highGain=it; try{loud?.enabled=it; if(it) loud?.setTargetGain(800)}catch(_:Exception){} }, modifier=Modifier.size(28.dp)); Text("HIGH GAIN", color=Color.Gray, fontSize=10.sp) }
+                            Text("EQ: FLAT", color=Color.Gray, fontSize=10.sp); Text("FILTER: PCM", color=Color.Gray, fontSize=10.sp)
+                        }
+                        Text("Bitrate: 4608 kbps • Sample Rate: 96kHz", color=Color.Gray, fontSize=10.sp, modifier=Modifier.padding(top=6.dp).align(Alignment.CenterHorizontally))
+                    }
+                    // LISTA
                     Row(horizontalArrangement=Arrangement.spacedBy(8.dp), modifier=Modifier.padding(top=8.dp)){
-                        Button(onClick={
-                            val list=mutableListOf<File>()
-                            ctx.contentResolver.query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, arrayOf(MediaStore.Audio.Media.DATA), "${MediaStore.Audio.Media.IS_MUSIC}!=0", null, null)?.use{ c ->
-                                val idx=c.getColumnIndexOrThrow(MediaStore.Audio.Media.DATA)
-                                while(c.moveToNext()){ val p=c.getString(idx)?: continue; val f=File(p); if(f.exists()) list.add(f) }
-                            }
-                            songs=list; status="Interna: ${list.size}"
-                        }){ Text("Interna") }
-                        Button(onClick={
-                            val dir=File("/storage/emulated/0/Music")
-                            songs=dir.listFiles()?.filter{ it.extension.lowercase() in listOf("mp3","flac","wav","m4a") }?: emptyList()
-                            status="Pasta: ${songs.size}"
-                        }){ Text("Pasta") }
+                        Button(onClick={ val l=mutableListOf<File>(); ctx.contentResolver.query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, arrayOf(MediaStore.Audio.Media.DATA), null, null, null)?.use{ c-> val id=c.getColumnIndexOrThrow(MediaStore.Audio.Media.DATA); while(c.moveToNext()){ val f=File(c.getString(id)?:continue); if(f.exists()) l.add(f) } }; songs=l }, modifier=Modifier.height(32.dp)){ Text("Interna", fontSize=10.sp) }
+                        Button(onClick={ val d=File("/storage/emulated/0/Music"); songs=d.listFiles()?.filter{ it.extension.lowercase() in listOf("mp3","flac","wav","m4a") }?.sortedBy{it.name}?: emptyList() }, modifier=Modifier.height(32.dp)){ Text("Pasta", fontSize=10.sp) }
                     }
-                    Text(status, color=Color.Gray, fontSize=10.sp)
-                    LazyColumn{ items(songs){ f -> TextButton(onClick={ player.setMediaItem(MediaItem.fromUri(f.toURI().toString())); player.prepare(); player.play(); isPlay=true; now=f }){ Text(f.name, color=Color.White, fontSize=12.sp) } } }
+                    LazyColumn(Modifier.weight(1f)){ itemsIndexed(songs){ i,f-> val sel=i==idx; TextButton(onClick={playAt(i)}){ Text(f.name, color=if(sel) Color(0xFF4DD0E1) else Color.White, fontSize=11.sp, maxLines=1) } } }
                 }
             }}
         }
     }
-    override fun onDestroy(){ super.onDestroy(); eq?.release(); viz?.release(); player.release() }
+    override fun onDestroy(){ super.onDestroy(); try{viz?.enabled=false}catch(_:Exception){}; eq?.release(); loud?.release(); viz?.release(); player.release() }
 }
