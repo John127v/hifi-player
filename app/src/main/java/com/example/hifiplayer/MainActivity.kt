@@ -1,8 +1,8 @@
 package com.whitelabel.hifiplayer
 
-import android.Manifest
 import android.content.ContentUris
-import android.content.pm.PackageManager
+import android.media.AudioAttributes
+import android.media.AudioManager
 import android.media.MediaPlayer
 import android.media.audiofx.Equalizer
 import android.media.audiofx.Visualizer
@@ -40,162 +40,314 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.ContextCompat
+import kotlin.math.abs
 import kotlin.math.hypot
 
-data class Song(val id: Long, val title: String, val uri: Uri)
-
+data class Song(val id: Long, val title: String, val artist: String, val uri: Uri)
 enum class RepeatMode { OFF, ALL, ONE }
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent { HiFiPlayerApp() }
+        setContent { HiFiFinal() }
     }
 }
 
 @Composable
-fun HiFiPlayerApp() {
+fun HiFiFinal() {
     val context = LocalContext.current
-    val cyanNeon = Color(0xFF00E5FF)
-    val cardBg = Color(0xFF121821)
-    val borderNeon = Color(0xFF1E3A4A)
+    val cyan = Color(0xFF00E5FF)
+    val card = Color(0xFF121821)
+    val border = Color(0xFF1E3A4A)
 
     var songs by remember { mutableStateOf<List<Song>>(emptyList()) }
     var idx by remember { mutableIntStateOf(0) }
     var isPlaying by remember { mutableStateOf(false) }
-    var showEq by remember { mutableStateOf(false) }
-    var shuffleMode by remember { mutableStateOf(false) }
-    var repeatMode by remember { mutableStateOf(RepeatMode.OFF) }
-    var eqLevels by remember { mutableStateOf(List(5){0.5f}) }
-    var fftValues by remember { mutableStateOf(List(64){0.05f}) }
-    var vuLeft by remember { mutableFloatStateOf(0.1f) }
-    var vuRight by remember { mutableFloatStateOf(0.1f) }
+    var showEq by remember { mutableStateOf(true) }
+    var shuffle by remember { mutableStateOf(false) }
+    var repeat by remember { mutableStateOf(RepeatMode.ALL) }
+    var eqLevels by remember { mutableStateOf(List(5) { 0.2f }) }
+    var fft by remember { mutableStateOf(List(16) { 0.05f }) }
+    var vuL by remember { mutableFloatStateOf(0.08f) }
+    var vuR by remember { mutableFloatStateOf(0.08f) }
+    var hasPerm by remember { mutableStateOf(false) }
+
     var player by remember { mutableStateOf<MediaPlayer?>(null) }
-    var equalizer by remember { mutableStateOf<Equalizer?>(null) }
-    var visualizer by remember { mutableStateOf<Visualizer?>(null) }
+    var eq by remember { mutableStateOf<Equalizer?>(null) }
+    var vis by remember { mutableStateOf<Visualizer?>(null) }
 
-    val permission = if(Build.VERSION.SDK_INT >= 33) Manifest.permission.READ_MEDIA_AUDIO else Manifest.permission.READ_EXTERNAL_STORAGE
-    var hasPerm by remember { mutableStateOf(ContextCompat.checkSelfPermission(context, permission)==PackageManager.PERMISSION_GRANTED) }
-    val permLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()){ hasPerm=it }
-
-    // CARREGAR MUSICAS DO CELULAR
-    fun loadMusics(){
+    fun load() {
         val list = mutableListOf<Song>()
         val uri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
-        val proj = arrayOf(MediaStore.Audio.Media._ID, MediaStore.Audio.Media.TITLE)
-        val sel = "${MediaStore.Audio.Media.IS_MUSIC}!= 0"
-        context.contentResolver.query(uri, proj, sel, null, "${MediaStore.Audio.Media.TITLE} ASC")?.use{ c ->
-            while(c.moveToNext()){
-                val id = c.getLong(0); val title = c.getString(1)
-                list.add(Song(id, title, ContentUris.withAppendedId(uri, id)))
+        context.contentResolver.query(
+            uri,
+            arrayOf(MediaStore.Audio.Media._ID, MediaStore.Audio.Media.TITLE, MediaStore.Audio.Media.ARTIST),
+            "${MediaStore.Audio.Media.IS_MUSIC}!=0",
+            null,
+            "TITLE ASC"
+        )?.use { c ->
+            val idCol = c.getColumnIndexOrThrow(MediaStore.Audio.Media._ID)
+            val titleCol = c.getColumnIndexOrThrow(MediaStore.Audio.Media.TITLE)
+            val artistCol = c.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST)
+
+            while (c.moveToNext()) {
+                val id = c.getLong(idCol)
+                list.add(
+                    Song(
+                        id = id,
+                        title = c.getString(titleCol) ?: "Desconhecida",
+                        artist = c.getString(artistCol) ?: "",
+                        uri = ContentUris.withAppendedId(uri, id)
+                    )
+                )
             }
         }
         songs = list
-        if(list.isEmpty()){
-            // Fallback se não achar
-            songs = listOf(Song(0,"Faixa 01 - White Label Mix", Uri.EMPTY), Song(1,"Faixa 02 - Deep Bass", Uri.EMPTY))
+    }
+
+    val perms = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        arrayOf(android.Manifest.permission.READ_MEDIA_AUDIO, android.Manifest.permission.RECORD_AUDIO)
+    } else {
+        arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE, android.Manifest.permission.RECORD_AUDIO)
+    }
+
+    val permLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { map ->
+        if (map.values.all { it }) {
+            hasPerm = true
+            load()
         }
     }
 
-    val folderLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()){ uri ->
-        uri?.let{ loadMusics() }
-    }
-
-    LaunchedEffect(hasPerm){ if(hasPerm) loadMusics() else permLauncher.launch(permission) }
-
-    fun playSong(i:Int){
-        if(songs.isEmpty()) return
-        idx=i
-        runCatching{
+    fun play(i: Int) {
+        if (songs.isEmpty()) return
+        idx = i
+        runCatching {
+            vis?.enabled = false
+            vis?.release()
+            eq?.release()
+            player?.stop()
             player?.release()
-            val s = songs[i]
-            player = MediaPlayer.create(context, s.uri).apply{
-                setOnCompletionListener{
-                    if(repeatMode==RepeatMode.ONE){ seekTo(0); start() }
-                    else { val n=if(idx<songs.size-1) idx+1 else 0; playSong(n) }
-                }
+
+            val newPlayer = MediaPlayer().apply {
+                setAudioAttributes(
+                    AudioAttributes.Builder()
+                        .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                        .setUsage(AudioAttributes.USAGE_MEDIA)
+                        .build()
+                )
+                setDataSource(context, songs[idx].uri)
+                prepare()
                 start()
+                setOnCompletionListener {
+                    when (repeat) {
+                        RepeatMode.ONE -> play(idx)
+                        RepeatMode.ALL -> play(if (shuffle) songs.indices.random() else if (idx < songs.size - 1) idx + 1 else 0)
+                        RepeatMode.OFF -> if (idx < songs.size - 1) play(idx + 1)
+                    }
+                }
             }
-            isPlaying=true
-            // RECRIAR EQUALIZER E VISUALIZER COM SESSION NOVA
-            equalizer?.release()
-            visualizer?.release()
-            val session = player!!.audioSessionId
-            equalizer = Equalizer(0, session).apply{ enabled=true }
-            visualizer = Visualizer(session).apply{
-                captureSize=Visualizer.getCaptureSizeRange()[1]
-                setDataCaptureListener(object: Visualizer.OnDataCaptureListener{
-                    override fun onWaveFormDataCapture(v: Visualizer?, w: ByteArray?, r: Int){}
-                    override fun onFftDataCapture(v: Visualizer?, fft: ByteArray?, rate: Int){
-                        fft?.let{
-                            val bands=MutableList(64){0f}; var j=2
-                            for(k in bands.indices){ if(j>=it.size-1) break
-                                bands[k]=(hypot(it[j].toDouble(), it[j+1].toDouble())/28f).toFloat().coerceIn(0.05f,1.1f); j+=2
-                            }
-                            fftValues=bands
-                            vuLeft=(bands.take(8).average()*1.8).toFloat().coerceIn(0f,1f)
-                            vuRight=(bands.drop(8).take(8).average()*1.8).toFloat().coerceIn(0f,1f)
+            player = newPlayer
+            isPlaying = true
+
+            val sessionId = newPlayer.audioSessionId
+            if (sessionId != 0) {
+                runCatching {
+                    eq = Equalizer(0, sessionId).apply {
+                        enabled = true
+                        eqLevels.forEachIndexed { b, l ->
+                            val r = bandLevelRange
+                            setBandLevel(b.toShort(), (r[0] + (r[1] - r[0]) * l).toInt().toShort())
                         }
                     }
-                }, Visualizer.getMaxCaptureRate()/2, false, true); enabled=true
+                }
+
+                runCatching {
+                    vis = Visualizer(sessionId).apply {
+                        captureSize = Visualizer.getCaptureSizeRange()[1]
+                        setDataCaptureListener(object : Visualizer.OnDataCaptureListener {
+                            override fun onWaveFormDataCapture(v: Visualizer?, w: ByteArray?, rate: Int) {
+                                w?.let {
+                                    var mx = 0
+                                    for (b in it) {
+                                        val a = abs(b.toInt())
+                                        if (a > mx) mx = a
+                                    }
+                                    val lvl = mx / 128f
+                                    vuL = lvl
+                                    vuR = lvl
+                                }
+                            }
+
+                            override fun onFftDataCapture(v: Visualizer?, f: ByteArray?, rate: Int) {
+                                f?.let {
+                                    val out = MutableList(16) { 0.05f }
+                                    for (k in 0..15) {
+                                        if (k * 2 + 1 < it.size) {
+                                            out[k] = (hypot(it[k * 2].toDouble(), it[k * 2 + 1].toDouble()).toFloat() / 50f).coerceIn(0.05f, 1f)
+                                        }
+                                    }
+                                    fft = out
+                                }
+                            }
+                        }, Visualizer.getMaxCaptureRate() / 2, true, true)
+                        enabled = true
+                    }
+                }
             }
         }
     }
 
-    Column(Modifier.fillMaxSize().background(Color(0xFF070A10)).padding(12.dp), verticalArrangement=Arrangement.spacedBy(10.dp)){
+    DisposableEffect(Unit) {
+        onDispose {
+            runCatching {
+                vis?.enabled = false
+                vis?.release()
+                eq?.release()
+                player?.stop()
+                player?.release()
+            }
+        }
+    }
 
-        // HEADER COM BOTAO ABRIR PASTA
-        Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(Color(0xFF0F1219)).border(1.dp,borderNeon,RoundedCornerShape(14.dp)).padding(12.dp)){
-            Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween, Alignment.CenterVertically){
-                Icon(Icons.Filled.Folder, "Abrir", tint=cyanNeon, modifier=Modifier.size(26.dp).clip(CircleShape).clickable{ folderLauncher.launch(null) }.padding(2.dp))
-                Text("HI-FI PLAYER", color=cyanNeon, fontSize=15.sp, fontWeight=FontWeight.Black)
-                Row(horizontalArrangement=Arrangement.spacedBy(10.dp)){
-                    Box(Modifier.clip(RoundedCornerShape(6.dp)).background(if(showEq) Color(0xFF102030) else Color.Transparent).border(1.dp, if(showEq) cyanNeon else Color(0xFF2A3445), RoundedCornerShape(6.dp)).clickable{showEq=!showEq}.padding(6.dp)){ Icon(Icons.Filled.Equalizer,"EQ", tint=if(showEq) cyanNeon else Color.Gray, modifier=Modifier.size(18.dp)) }
-                    Box(Modifier.clip(RoundedCornerShape(6.dp)).background(if(shuffleMode) Color(0xFF102030) else Color.Transparent).border(1.dp, if(shuffleMode) cyanNeon else Color(0xFF2A3445), RoundedCornerShape(6.dp)).clickable{shuffleMode=!shuffleMode}.padding(6.dp)){ Icon(Icons.Filled.Shuffle,"RND", tint=if(shuffleMode) cyanNeon else Color.Gray, modifier=Modifier.size(18.dp)) }
-                    Box(Modifier.clip(RoundedCornerShape(6.dp)).background(if(repeatMode!=RepeatMode.OFF) Color(0xFF102030) else Color.Transparent).border(1.dp, if(repeatMode!=RepeatMode.OFF) cyanNeon else Color(0xFF2A3445), RoundedCornerShape(6.dp)).clickable{ repeatMode=when(repeatMode){RepeatMode.OFF->RepeatMode.ALL; RepeatMode.ALL->RepeatMode.ONE; RepeatMode.ONE->RepeatMode.OFF}}.padding(6.dp)){ Icon(Icons.Filled.Repeat,"REP", tint=if(repeatMode!=RepeatMode.OFF) cyanNeon else Color.Gray, modifier=Modifier.size(18.dp)) }
+    Column(
+        Modifier
+            .fillMaxSize()
+            .background(Color(0xFF070A10))
+            .padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        // HEADER
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(14.dp))
+                .background(Color(0xFF0F1219))
+                .border(1.dp, border, RoundedCornerShape(14.dp))
+                .padding(12.dp)
+        ) {
+            Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween, Alignment.CenterVertically) {
+                Icon(
+                    Icons.Filled.Folder,
+                    contentDescription = "Carregar Músicas",
+                    tint = cyan,
+                    modifier = Modifier
+                        .size(26.dp)
+                        .clickable { if (hasPerm) load() else permLauncher.launch(perms) }
+                )
+                Text("HI-FI PLAYER", color = cyan, fontWeight = FontWeight.Black, fontSize = 15.sp, letterSpacing = 1.sp)
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Icon(
+                        Icons.Filled.Equalizer,
+                        contentDescription = "EQ",
+                        tint = if (showEq) cyan else Color.Gray,
+                        modifier = Modifier
+                            .size(22.dp)
+                            .clickable { showEq = !showEq }
+                    )
+                    Icon(
+                        Icons.Filled.Shuffle,
+                        contentDescription = "Shuffle",
+                        tint = if (shuffle) cyan else Color.Gray,
+                        modifier = Modifier
+                            .size(22.dp)
+                            .clickable { shuffle = !shuffle }
+                    )
+                    Icon(
+                        Icons.Filled.Repeat,
+                        contentDescription = "Repeat",
+                        tint = if (repeat != RepeatMode.OFF) cyan else Color.Gray,
+                        modifier = Modifier
+                            .size(22.dp)
+                            .clickable {
+                                repeat = when (repeat) {
+                                    RepeatMode.OFF -> RepeatMode.ALL
+                                    RepeatMode.ALL -> RepeatMode.ONE
+                                    RepeatMode.ONE -> RepeatMode.OFF
+                                }
+                            }
+                    )
                 }
             }
         }
 
-        if(!hasPerm){
-            Button(onClick={permLauncher.launch(permission)}, colors=ButtonDefaults.buttonColors(containerColor=cyanNeon)){ Text("PERMITIR ACESSO AS MUSICAS", color=Color.Black, fontWeight=FontWeight.Black) }
+        if (!hasPerm) {
+            Button(
+                onClick = { permLauncher.launch(perms) },
+                colors = ButtonDefaults.buttonColors(containerColor = cyan),
+                modifier = Modifier
+                    .fillMaxWidth(0.85f)
+                    .height(44.dp)
+                    .align(Alignment.CenterHorizontally),
+                shape = RoundedCornerShape(20.dp)
+            ) {
+                Text("PERMITIR ACESSO AS MUSICAS", color = Color.Black, fontWeight = FontWeight.Black, fontSize = 13.sp)
+            }
         }
 
-        // EQ VERTICAL COM DESLOCAMENTO TOTAL - CORRIGIDO
-        if(showEq){
-            Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(cardBg).border(1.dp,borderNeon,RoundedCornerShape(12.dp)).padding(12.dp)){
-                Column{
-                    Text("5-BAND EQUALIZER • ARRASTE VERTICAL", color=cyanNeon, fontSize=10.sp, fontWeight=FontWeight.Black)
-                    Spacer(Modifier.height(16.dp))
-                    Row(Modifier.fillMaxWidth().height(160.dp), horizontalArrangement=Arrangement.SpaceEvenly){
-                        val freqs=listOf("60","230","910","3.6K","14K")
-                        freqs.forEachIndexed{ i,f ->
-                            var level by remember{ mutableStateOf(eqLevels[i]) }
-                            Column(horizontalAlignment=Alignment.CenterHorizontally){
-                                // SLIDER VERTICAL REAL COM 100% DE DESLOCAMENTO
-                                Box(Modifier.width(40.dp).height(120.dp).clip(RoundedCornerShape(20.dp)).background(Color(0xFF080A0F)).border(1.dp, borderNeon, RoundedCornerShape(20.dp))
-                                   .pointerInput(i){
-                                        detectVerticalDragGestures{ _, dragAmount ->
-                                            val newVal = (level - dragAmount/120f).coerceIn(0f,1f)
-                                            level=newVal
-                                            val newList=eqLevels.toMutableList(); newList[i]=newVal; eqLevels=newList
-                                            equalizer?.let{ eq ->
-                                                if(i<eq.numberOfBands){
-                                                    val r=eq.bandLevelRange
-                                                    eq.setBandLevel(i.toShort(), (r[0] + (r[1]-r[0])*newVal).toInt().toShort())
+        // 5-BAND EQUALIZER
+        if (showEq) {
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(card)
+                    .border(1.dp, border, RoundedCornerShape(12.dp))
+                    .padding(10.dp)
+            ) {
+                Column {
+                    Text("5-BAND EQUALIZER • ARRASTE VERTICAL", color = cyan, fontSize = 10.sp, fontWeight = FontWeight.Black)
+                    Spacer(Modifier.height(10.dp))
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .height(150.dp),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        listOf("60", "230", "910", "3.6K", "14K").forEachIndexed { i, f ->
+                            var lv by remember { mutableFloatStateOf(eqLevels[i]) }
+                            LaunchedEffect(eqLevels) { lv = eqLevels[i] }
+
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Box(
+                                    Modifier
+                                        .width(46.dp)
+                                        .height(120.dp)
+                                        .clip(RoundedCornerShape(20.dp))
+                                        .background(Color(0xFF080A0F))
+                                        .border(1.dp, border, RoundedCornerShape(20.dp))
+                                        .pointerInput(i) {
+                                            detectVerticalDragGestures { _, dragAmount ->
+                                                val nv = (lv - dragAmount / 120f).coerceIn(0f, 1f)
+                                                lv = nv
+                                                val nl = eqLevels.toMutableList()
+                                                nl[i] = nv
+                                                eqLevels = nl
+                                                eq?.let { e ->
+                                                    val r = e.bandLevelRange
+                                                    e.setBandLevel(i.toShort(), (r[0] + (r[1] - r[0]) * nv).toInt().toShort())
                                                 }
                                             }
                                         }
-                                    }
-                                ){
-                                    Box(Modifier.fillMaxWidth().fillMaxHeight(level).align(Alignment.BottomCenter).background(cyanNeon.copy(alpha=0.3f)))
-                                    Box(Modifier.fillMaxWidth().height(4.dp).background(cyanNeon).align(Alignment.BottomCenter).offset(y=-(level*116).dp))
-                                    Box(Modifier.size(18.dp).clip(CircleShape).background(cyanNeon).align(Alignment.BottomCenter).offset(y=-(level*112).dp))
+                                ) {
+                                    Box(
+                                        Modifier
+                                            .fillMaxWidth()
+                                            .fillMaxHeight(lv)
+                                            .align(Alignment.BottomCenter)
+                                            .background(cyan.copy(alpha = 0.35f))
+                                    )
+                                    Box(
+                                        Modifier
+                                            .size(18.dp)
+                                            .clip(CircleShape)
+                                            .background(cyan)
+                                            .align(Alignment.BottomCenter)
+                                            .offset(y = -(lv * 104).dp)
+                                    )
                                 }
-                                Spacer(Modifier.height(6.dp))
-                                Text(f, color=Color.White, fontSize=9.sp, fontWeight=FontWeight.Bold)
-                                Text("${((level-0.5f)*30).toInt()}dB", color=cyanNeon, fontSize=7.sp)
+                                Spacer(Modifier.height(4.dp))
+                                Text(f, color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                Text("${((lv - 0.5f) * 30).toInt()}dB", color = cyan, fontSize = 7.sp)
                             }
                         }
                     }
@@ -203,39 +355,173 @@ fun HiFiPlayerApp() {
             }
         }
 
-        // VU + SPECTRUM 16
-        Row(Modifier.fillMaxWidth(), horizontalArrangement=Arrangement.spacedBy(8.dp)){
-            listOf("L" to vuLeft, "R" to vuRight).forEach{ (ch, lv) ->
-                Box(Modifier.weight(1f).clip(RoundedCornerShape(12.dp)).background(cardBg).border(1.dp,borderNeon,RoundedCornerShape(12.dp)).padding(8.dp)){
-                    Column{
-                        Canvas(Modifier.fillMaxWidth().height(22.dp)){
-                            val steps=listOf(-10,-7,-5,-3,-1,0,1,2,3); val w=size.width/steps.size
-                            steps.forEachIndexed{ idx2,v -> val active=(lv*13-10)>=v; drawRect(if(active){if(v>=0) Color(0xFFFF1744) else cyanNeon}else Color(0xFF1E2A3A), topLeft=Offset(idx2*w,0f), size=Size(w-2.dp.toPx(), size.height)) }
+        // VU METER
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf(vuL to "-10 -5 0 +3", vuR to "-10 -5 0 +3").forEach { (lvl, _) ->
+                Box(
+                    Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(card)
+                        .border(1.dp, border, RoundedCornerShape(10.dp))
+                        .padding(6.dp)
+                ) {
+                    Column {
+                        Canvas(
+                            Modifier
+                                .fillMaxWidth()
+                                .height(20.dp)
+                        ) {
+                            val steps = 9
+                            val w = size.width / steps
+                            val db = 20 * kotlin.math.log10((lvl * 1.5f).coerceAtLeast(0.01f))
+                            val thresholds = listOf(-10, -8, -6, -4, -2, 0, 1, 2, 3)
+
+                            for (j in 0 until steps) {
+                                val thr = thresholds[j]
+                                val active = db >= thr
+                                val col = if (active) {
+                                    if (thr >= 1) Color(0xFFFF1744) else cyan
+                                } else Color(0xFF1E2A3A)
+
+                                drawRect(col, Offset(j * w, 0f), Size(w - 3.dp.toPx(), size.height))
+                            }
                         }
-                        Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween){ listOf("-10","-5","0","+3").forEach{ Text(it, color=Color.Gray, fontSize=7.sp)} }
+                        Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween) {
+                            Text("-10", color = Color.Gray, fontSize = 7.sp)
+                            Text("-5", color = Color.Gray, fontSize = 7.sp)
+                            Text("0", color = Color.Gray, fontSize = 7.sp)
+                            Text("+3", color = Color.Gray, fontSize = 7.sp)
+                        }
                     }
                 }
             }
         }
 
-        Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(cardBg).border(1.dp,borderNeon,RoundedCornerShape(12.dp)).padding(8.dp)){
-            Box(Modifier.fillMaxWidth().height(110.dp).clip(RoundedCornerShape(6.dp)).background(Color(0xFF080A0F))){
-                Canvas(Modifier.fillMaxSize()){
-                    val bands=16; val barW=size.width/bands
-                    val grouped=List(bands){ b -> val s=b*fftValues.size/bands; val e=(b+1)*fftValues.size/bands; fftValues.subList(s,e.coerceAtMost(fftValues.size)).maxOrNull()?:0.05f }
-                    grouped.forEachIndexed{ i,h -> val bh=size.height*h.coerceIn(0.05f,1f); val col=when{ h>0.9f->Color(0xFFFF1744); h>0.72f->Color(0xFFFFEB3B); else->cyanNeon }; drawRoundRect(col, topLeft=Offset(i*barW+3.dp.toPx(), size.height-bh), size=Size(barW-6.dp.toPx(), bh), cornerRadius=CornerRadius(2.dp.toPx())) }
+        // SPECTRUM ANALYZER
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(12.dp))
+                .background(card)
+                .border(1.dp, border, RoundedCornerShape(12.dp))
+                .padding(8.dp)
+        ) {
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .height(120.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(Color.Black)
+            ) {
+                Canvas(Modifier.fillMaxSize()) {
+                    val bw = size.width / 16
+                    if (isPlaying) {
+                        fft.forEachIndexed { i, h ->
+                            val bh = size.height * h
+                            val col = when {
+                                h > 0.8f -> Color(0xFFFF1744)
+                                h > 0.6f -> Color(0xFFFFEB3B)
+                                else -> cyan
+                            }
+                            drawRoundRect(
+                                color = col,
+                                topLeft = Offset(i * bw + 4.dp.toPx(), size.height - bh),
+                                size = Size(bw - 8.dp.toPx(), bh),
+                                cornerRadius = CornerRadius(3.dp.toPx())
+                            )
+                        }
+                    } else {
+                        for (i in 0 until 16) {
+                            drawRoundRect(
+                                color = cyan,
+                                topLeft = Offset(i * bw + 4.dp.toPx(), size.height - 6.dp.toPx()),
+                                size = Size(bw - 8.dp.toPx(), 4.dp.toPx()),
+                                cornerRadius = CornerRadius(2.dp.toPx())
+                            )
+                        }
+                    }
                 }
             }
         }
 
-        Row(Modifier.fillMaxWidth(), Arrangement.SpaceEvenly, Alignment.CenterVertically){
-            Box(Modifier.size(54.dp).clip(CircleShape).background(Color(0xFF1A2435)).border(1.dp,borderNeon,CircleShape).clickable{ if(songs.isNotEmpty()) playSong(if(idx>0) idx-1 else songs.size-1) }, contentAlignment=Alignment.Center){ Icon(Icons.Filled.SkipPrevious,"Prev", tint=Color.White, modifier=Modifier.size(30.dp)) }
-            Box(Modifier.size(74.dp).clip(CircleShape).background(cyanNeon).clickable{ player?.let{ if(isPlaying){ it.pause(); isPlaying=false } else { it.start(); isPlaying=true } } }, contentAlignment=Alignment.Center){ Icon(if(isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,"Play", tint=Color.Black, modifier=Modifier.size(38.dp)) }
-            Box(Modifier.size(54.dp).clip(CircleShape).background(Color(0xFF1A2435)).border(1.dp,borderNeon,CircleShape).clickable{ if(songs.isNotEmpty()) playSong(if(idx<songs.size-1) idx+1 else 0) }, contentAlignment=Alignment.Center){ Icon(Icons.Filled.SkipNext,"Next", tint=Color.White, modifier=Modifier.size(30.dp)) }
+        // CONTROLES DE PLAYER
+        Row(Modifier.fillMaxWidth(), Arrangement.SpaceEvenly, Alignment.CenterVertically) {
+            Box(
+                Modifier
+                    .size(56.dp)
+                    .clip(CircleShape)
+                    .background(Color(0xFF1A2435))
+                    .border(1.dp, border, CircleShape)
+                    .clickable { if (songs.isNotEmpty()) play(if (idx > 0) idx - 1 else songs.size - 1) },
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(Icons.Filled.SkipPrevious, contentDescription = "Anterior", tint = Color.White, modifier = Modifier.size(28.dp))
+            }
+
+            Box(
+                Modifier
+                    .size(80.dp)
+                    .clip(CircleShape)
+                    .background(cyan)
+                    .clickable {
+                        if (songs.isEmpty()) return@clickable
+                        if (isPlaying) {
+                            player?.pause()
+                            isPlaying = false
+                        } else {
+                            if (player == null) play(idx) else { player?.start(); isPlaying = true }
+                        }
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
+                    contentDescription = "Play/Pause",
+                    tint = Color.Black,
+                    modifier = Modifier.size(42.dp)
+                )
+            }
+
+            Box(
+                Modifier
+                    .size(56.dp)
+                    .clip(CircleShape)
+                    .background(Color(0xFF1A2435))
+                    .border(1.dp, border, CircleShape)
+                    .clickable { if (songs.isNotEmpty()) play(if (idx < songs.size - 1) idx + 1 else 0) },
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(Icons.Filled.SkipNext, contentDescription = "Próxima", tint = Color.White, modifier = Modifier.size(28.dp))
+            }
         }
 
-        LazyColumn(verticalArrangement=Arrangement.spacedBy(6.dp)){
-            itemsIndexed(songs){ i,s -> Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(if(i==idx) Color(0xFF102030) else cardBg).border(1.dp, if(i==idx) cyanNeon else borderNeon, RoundedCornerShape(10.dp)).clickable{ playSong(i) }.padding(12.dp)){ Text(s.title, color=if(i==idx) cyanNeon else Color.White, fontSize=13.sp) } }
+        // LISTA DE MÚSICAS
+        if (songs.isNotEmpty()) {
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+                modifier = Modifier.weight(1f)
+            ) {
+                itemsIndexed(songs) { i, s ->
+                    Box(
+                        Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(if (i == idx) Color(0xFF102030) else card)
+                            .border(1.dp, if (i == idx) cyan else border, RoundedCornerShape(10.dp))
+                            .clickable { play(i) }
+                            .padding(10.dp)
+                    ) {
+                        Text(
+                            text = s.title,
+                            color = if (i == idx) cyan else Color.White,
+                            fontSize = 12.sp,
+                            fontWeight = if (i == idx) FontWeight.Black else FontWeight.Normal,
+                            maxLines = 1
+                        )
+                    }
+                }
+            }
         }
     }
 }
