@@ -2,7 +2,6 @@ package com.example.hifiplayer
 
 import android.content.ContentUris
 import android.media.AudioAttributes
-import android.media.AudioManager
 import android.media.MediaPlayer
 import android.media.audiofx.Equalizer
 import android.media.audiofx.Visualizer
@@ -46,11 +45,21 @@ data class Song(val id: Long, val title: String, val artist: String, val uri: Ur
 enum class RepeatMode { OFF, ALL, ONE }
 
 class MainActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) { super.onCreate(savedInstanceState); setContent { HiFiV22() } }
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContent {
+            // ESSENCIAL PARA NÃO CRASHAR
+            MaterialTheme {
+                Surface(Modifier.fillMaxSize(), color = Color(0xFF070A10)) {
+                    HiFiV23()
+                }
+            }
+        }
+    }
 }
 
 @Composable
-fun HiFiV22(){
+fun HiFiV23(){
     val context = LocalContext.current
     val cyan = Color(0xFF00E5FF)
     val card = Color(0xFF121821)
@@ -73,19 +82,21 @@ fun HiFiV22(){
     var vis by remember { mutableStateOf<Visualizer?>(null) }
 
     fun load(){
-        val list = mutableListOf<Song>()
-        val uri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
-        context.contentResolver.query(uri, arrayOf(MediaStore.Audio.Media._ID, MediaStore.Audio.Media.TITLE, MediaStore.Audio.Media.ARTIST), "${MediaStore.Audio.Media.IS_MUSIC}!=0", null, "TITLE ASC")?.use{ c ->
-            while(c.moveToNext()) list.add(Song(c.getLong(0), c.getString(1)?:"", c.getString(2)?:"", ContentUris.withAppendedId(uri, c.getLong(0))))
-        }
-        songs = list
+        try {
+            val list = mutableListOf<Song>()
+            val uri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
+            context.contentResolver.query(uri, arrayOf(MediaStore.Audio.Media._ID, MediaStore.Audio.Media.TITLE, MediaStore.Audio.Media.ARTIST), "${MediaStore.Audio.Media.IS_MUSIC}!=0", null, "TITLE ASC")?.use{ c ->
+                while(c.moveToNext()) list.add(Song(c.getLong(0), c.getString(1)?:"", c.getString(2)?:"", ContentUris.withAppendedId(uri, c.getLong(0))))
+            }
+            songs = list
+        } catch(e:Exception){}
     }
 
     val perms = if(android.os.Build.VERSION.SDK_INT>=33) arrayOf(android.Manifest.permission.READ_MEDIA_AUDIO, android.Manifest.permission.RECORD_AUDIO) else arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE, android.Manifest.permission.RECORD_AUDIO)
     val permLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()){ m -> if(m.values.all{it}){ hasPerm=true; load() } }
 
     fun initAudioFx(sessionId: Int){
-        runCatching{
+        try{
             vis?.release(); eq?.release()
             if(sessionId==0) return
             eq = Equalizer(0, sessionId).apply{
@@ -104,23 +115,21 @@ fun HiFiV22(){
                 }, Visualizer.getMaxCaptureRate()/2, true, true)
                 enabled=true
             }
+        } catch(e:Exception){
+            // se falhar o Visualizer, continua tocando sem ele
         }
     }
 
     fun play(i:Int){
         if(songs.isEmpty()) return
         idx=i
-        runCatching{
+        try{
             vis?.release(); eq?.release(); player?.release()
             player = MediaPlayer().apply{
                 val attrs = AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build()
                 setAudioAttributes(attrs)
                 setDataSource(context, songs[idx].uri)
-                setOnPreparedListener{ mp ->
-                    mp.start()
-                    isPlaying=true
-                    initAudioFx(mp.audioSessionId)
-                }
+                setOnPreparedListener{ mp -> try{ mp.start(); isPlaying=true; initAudioFx(mp.audioSessionId) } catch(e:Exception){} }
                 setOnCompletionListener{
                     when(repeat){
                         RepeatMode.ONE -> play(idx)
@@ -130,7 +139,7 @@ fun HiFiV22(){
                 }
                 prepareAsync()
             }
-        }
+        } catch(e:Exception){}
     }
 
     Column(Modifier.fillMaxSize().background(Color(0xFF070A10)).padding(12.dp), verticalArrangement=Arrangement.spacedBy(12.dp)){
@@ -160,7 +169,7 @@ fun HiFiV22(){
                             var lv by remember{ mutableStateOf(eqLevels[i]) }
                             LaunchedEffect(eqLevels){ lv=eqLevels[i] }
                             Column(horizontalAlignment=Alignment.CenterHorizontally){
-                                Box(Modifier.width(46.dp).height(120.dp).clip(RoundedCornerShape(20.dp)).background(Color(0xFF080A0F)).border(1.dp,border,RoundedCornerShape(20.dp)).pointerInput(i){ detectVerticalDragGestures{ _, d -> val nv=(lv-d/120f).coerceIn(0f,1f); lv=nv; val nl=eqLevels.toMutableList(); nl[i]=nv; eqLevels=nl; eq?.let{ e -> val r=e.bandLevelRange; e.setBandLevel(i.toShort(), (r[0]+(r[1]-r[0])*nv).toInt().toShort()) } }}){
+                                Box(Modifier.width(46.dp).height(120.dp).clip(RoundedCornerShape(20.dp)).background(Color(0xFF080A0F)).border(1.dp,border,RoundedCornerShape(20.dp)).pointerInput(i){ detectVerticalDragGestures{ _, d -> val nv=(lv-d/120f).coerceIn(0f,1f); lv=nv; val nl=eqLevels.toMutableList(); nl[i]=nv; eqLevels=nl; try{ eq?.let{ e -> val r=e.bandLevelRange; e.setBandLevel(i.toShort(), (r[0]+(r[1]-r[0])*nv).toInt().toShort()) } }catch(e:Exception){} }}){
                                     Box(Modifier.fillMaxWidth().fillMaxHeight(lv).align(Alignment.BottomCenter).background(cyan.copy(0.35f)))
                                     Box(Modifier.size(18.dp).clip(CircleShape).background(cyan).align(Alignment.BottomCenter).offset(y=-(lv*104).dp))
                                 }
@@ -194,7 +203,7 @@ fun HiFiV22(){
         }
         Row(Modifier.fillMaxWidth(), Arrangement.SpaceEvenly, Alignment.CenterVertically){
             Box(Modifier.size(56.dp).clip(CircleShape).background(Color(0xFF1A2435)).border(1.dp,border,CircleShape).clickable{ if(songs.isNotEmpty()) play(if(idx>0) idx-1 else songs.size-1) }, contentAlignment=Alignment.Center){ Icon(Icons.Filled.SkipPrevious, null, tint=Color.White, modifier=Modifier.size(28.dp)) }
-            Box(Modifier.size(80.dp).clip(CircleShape).background(cyan).clickable{ if(songs.isEmpty()) return@clickable; if(isPlaying){ player?.pause(); isPlaying=false } else { if(player==null) play(idx) else { player?.start(); isPlaying=true } } }, contentAlignment=Alignment.Center){ Icon(if(isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow, null, tint=Color.Black, modifier=Modifier.size(42.dp)) }
+            Box(Modifier.size(80.dp).clip(CircleShape).background(cyan).clickable{ if(songs.isEmpty()) return@clickable; if(isPlaying){ try{ player?.pause(); isPlaying=false }catch(e:Exception){} } else { if(player==null) play(idx) else { try{ player?.start(); isPlaying=true }catch(e:Exception){} } } }, contentAlignment=Alignment.Center){ Icon(if(isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow, null, tint=Color.Black, modifier=Modifier.size(42.dp)) }
             Box(Modifier.size(56.dp).clip(CircleShape).background(Color(0xFF1A2435)).border(1.dp,border,CircleShape).clickable{ if(songs.isNotEmpty()) play(if(idx<songs.size-1) idx+1 else 0) }, contentAlignment=Alignment.Center){ Icon(Icons.Filled.SkipNext, null, tint=Color.White, modifier=Modifier.size(28.dp)) }
         }
         if(songs.isNotEmpty()){ LazyColumn(verticalArrangement=Arrangement.spacedBy(6.dp)){ itemsIndexed(songs){ i,s -> Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(if(i==idx) Color(0xFF102030) else card).border(1.dp, if(i==idx) cyan else border, RoundedCornerShape(10.dp)).clickable{ play(i) }.padding(10.dp)){ Text(s.title, color=if(i==idx) cyan else Color.White, fontSize=12.sp, maxLines=1) } } } }
