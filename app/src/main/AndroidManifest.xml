@@ -1,22 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- PERMISSÃO OBRIGATÓRIA PARA O VISUALIZER E VU METER FUNCIONAREM -->
+    <!-- Permissão obrigatória para a API do Visualizer/FFT -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
-    <!-- Permissões de Leitura de Mídia (Arquivos) -->
-    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
-
-    <uses-feature android:name="android.hardware.usb.host" android:required="false" />
-
-    <application 
-        android:label="HiFi Player" 
-        android:theme="@android:style/Theme.Material.Light.NoActionBar">
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="HiFi Player"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.Material3.DayNight.NoActionBar">
         
-        <activity 
-            android:name=".MainActivity" 
-            android:exported="true">
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:theme="@style/Theme.Material3.DayNight.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
