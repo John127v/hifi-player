@@ -30,6 +30,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -64,7 +65,7 @@ class MainActivity : ComponentActivity() {
             var pos by remember { mutableStateOf(0L) }
             var dur by remember { mutableStateOf(0L) }
 
-            // LEITURAS REAIS EM TEMPO REAL
+            // LEITURAS EM TEMPO REAL
             var fftValues by remember { mutableStateOf(List(32) { 0.05f }) }
             var vuLeft by remember { mutableStateOf(0.05f) }
             var vuRight by remember { mutableStateOf(0.05f) }
@@ -77,14 +78,12 @@ class MainActivity : ComponentActivity() {
             fun setupAudioEffects(sessionId: Int) {
                 if (sessionId == 0) return
 
-                // Liberar instância anterior se existir
                 try {
                     viz?.enabled = false
                     viz?.release()
                     viz = null
                 } catch (_: Exception) {}
 
-                // Verificar permissão de áudio antes de instanciar o Visualizer
                 if (ContextCompat.checkSelfPermission(ctx, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
                     try {
                         viz = Visualizer(sessionId).apply {
@@ -92,7 +91,7 @@ class MainActivity : ComponentActivity() {
 
                             setDataCaptureListener(
                                 object : Visualizer.OnDataCaptureListener {
-                                    // 1. LEITURA REAL DO VU METER (Waveform - RMS)
+                                    // 1. LEITURA DO VU METER (WAVEFORM - RMS)
                                     override fun onWaveFormDataCapture(v: Visualizer?, waveform: ByteArray?, samplingRate: Int) {
                                         waveform?.let { bytes ->
                                             if (bytes.isEmpty()) return
@@ -118,7 +117,7 @@ class MainActivity : ComponentActivity() {
                                         }
                                     }
 
-                                    // 2. LEITURA REAL DO ANALISADOR GRÁFICO (FFT)
+                                    // 2. LEITURA DO ANALISADOR GRÁFICO (FFT)
                                     override fun onFftDataCapture(v: Visualizer?, fft: ByteArray?, samplingRate: Int) {
                                         fft?.let { bytes ->
                                             if (bytes.size < 64) return
@@ -136,8 +135,8 @@ class MainActivity : ComponentActivity() {
                                     }
                                 },
                                 Visualizer.getMaxCaptureRate() / 2,
-                                true, // Ativa Waveform (VU)
-                                true  // Ativa FFT (Analisador)
+                                true,
+                                true
                             )
                             enabled = true
                         }
@@ -146,7 +145,6 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                // Configuração do Equalizador e Gain
                 try {
                     eq?.release()
                     loud?.release()
@@ -209,7 +207,7 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-            // ESTILIZAÇÃO VISUAL HI-FI
+            // CORES HI-FI
             val bgDark = Color(0xFF0A0A0C)
             val cardBg = Color(0xFF14161C)
             val cyanNeon = Color(0xFF00E5FF)
@@ -261,13 +259,16 @@ class MainActivity : ComponentActivity() {
 
                         Spacer(Modifier.height(10.dp))
 
-                        // PAINEL ANALÓGICO (VU + FFT)
+                        // PAINEL ANALÓGICO (VU + FFT) - CORRIGIDO O BRUSH / SHAPE
                         Box(
                             Modifier
                                 .fillMaxWidth()
                                 .weight(1f)
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(Brush.verticalGradient(listOf(Color(0xFF12141A), Color(0xFF08090C))))
+                                .background(
+                                    brush = Brush.verticalGradient(listOf(Color(0xFF12141A), Color(0xFF08090C))),
+                                    shape = RoundedCornerShape(12.dp)
+                                )
                                 .border(1.dp, Color(0xFF222530), RoundedCornerShape(12.dp))
                                 .padding(10.dp)
                         ) {
@@ -283,7 +284,7 @@ class MainActivity : ComponentActivity() {
 
                                 Spacer(Modifier.height(8.dp))
 
-                                // ANALISADOR GRÁFICO (BARRAS FFT)
+                                // ANALISADOR GRÁFICO (BARRAS FFT) - CORRIGIDO BARRAS DENTRO DO BACKGROUND
                                 Row(
                                     Modifier
                                         .fillMaxWidth()
@@ -297,16 +298,19 @@ class MainActivity : ComponentActivity() {
                                             animationSpec = tween(50),
                                             label = "fft"
                                         )
+                                        val barBrush = if (animH > 0.85f) {
+                                            SolidColor(Color.Red)
+                                        } else {
+                                            Brush.verticalGradient(listOf(cyanNeon, cyanNeon.copy(alpha = 0.2f)))
+                                        }
+
                                         Box(
                                             Modifier
                                                 .weight(1f)
                                                 .padding(horizontal = 1.dp)
                                                 .fillMaxHeight(animH)
                                                 .clip(RoundedCornerShape(topStart = 2.dp, topEnd = 2.dp))
-                                                .background(
-                                                    if (animH > 0.85f) Color.Red
-                                                    else Brush.verticalGradient(listOf(cyanNeon, cyanNeon.copy(alpha = 0.2f)))
-                                                )
+                                                .background(brush = barBrush)
                                         )
                                     }
                                 }
@@ -508,7 +512,10 @@ fun VUMeterDial(level: Float, label: String, dialColor: Color) {
         Modifier
             .size(125.dp)
             .clip(CircleShape)
-            .background(Brush.radialGradient(listOf(Color(0xFF20232A), Color(0xFF101115))))
+            .background(
+                brush = Brush.radialGradient(listOf(Color(0xFF20232A), Color(0xFF101115))),
+                shape = CircleShape
+            )
             .border(2.dp, dialColor, CircleShape)
     ) {
         Canvas(Modifier.fillMaxSize()) {
