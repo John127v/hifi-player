@@ -1,12 +1,12 @@
-package com.whitelabel.hifiplayer
+package com.example.hifiplayer
 
 import android.content.ContentUris
 import android.media.AudioAttributes
+import android.media.AudioManager
 import android.media.MediaPlayer
 import android.media.audiofx.Equalizer
 import android.media.audiofx.Visualizer
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
 import androidx.activity.ComponentActivity
@@ -81,14 +81,13 @@ fun HiFiV22(){
         songs = list
     }
 
-    val perms = if(Build.VERSION.SDK_INT>=33) arrayOf(android.Manifest.permission.READ_MEDIA_AUDIO, android.Manifest.permission.RECORD_AUDIO) else arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE, android.Manifest.permission.RECORD_AUDIO)
+    val perms = if(android.os.Build.VERSION.SDK_INT>=33) arrayOf(android.Manifest.permission.READ_MEDIA_AUDIO, android.Manifest.permission.RECORD_AUDIO) else arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE, android.Manifest.permission.RECORD_AUDIO)
     val permLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()){ m -> if(m.values.all{it}){ hasPerm=true; load() } }
 
     fun initAudioFx(sessionId: Int){
         runCatching{
             vis?.release(); eq?.release()
-            // CORREÇÃO 2: Só inicializa DEPOIS do sessionId válido > 0
-            if(sessionId==0 || sessionId==AudioManager.ERROR) return
+            if(sessionId==0) return
             eq = Equalizer(0, sessionId).apply{
                 enabled=true
                 eqLevels.forEachIndexed{ b,l -> val r=bandLevelRange; setBandLevel(b.toShort(), (r[0]+(r[1]-r[0])*l).toInt().toShort()) }
@@ -114,17 +113,13 @@ fun HiFiV22(){
         runCatching{
             vis?.release(); eq?.release(); player?.release()
             player = MediaPlayer().apply{
-                // CORREÇÃO 1: AudioAttributes no lugar de setAudioStreamType
-                val attrs = AudioAttributes.Builder()
-                   .setUsage(AudioAttributes.USAGE_MEDIA)
-                   .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-                   .build()
+                val attrs = AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build()
                 setAudioAttributes(attrs)
                 setDataSource(context, songs[idx].uri)
                 setOnPreparedListener{ mp ->
                     mp.start()
                     isPlaying=true
-                    initAudioFx(mp.audioSessionId) // Inicializa SÓ AQUI, quando já está preparado
+                    initAudioFx(mp.audioSessionId)
                 }
                 setOnCompletionListener{
                     when(repeat){
@@ -133,12 +128,11 @@ fun HiFiV22(){
                         RepeatMode.OFF -> if(idx<songs.size-1) play(idx+1)
                     }
                 }
-                prepareAsync() // Usa Async para não travar
+                prepareAsync()
             }
         }
     }
 
-    // Mesma UI dos seus prints
     Column(Modifier.fillMaxSize().background(Color(0xFF070A10)).padding(12.dp), verticalArrangement=Arrangement.spacedBy(12.dp)){
         Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(Color(0xFF0F1219)).border(1.dp,border,RoundedCornerShape(14.dp)).padding(12.dp)){
             Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween, Alignment.CenterVertically){
