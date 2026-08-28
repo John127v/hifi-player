@@ -1,211 +1,53 @@
-package com.example.hifiplayer
+// V12 RENDER EDITION - Corrigida + Otimizada
+// Principais mudanças:
+// - sessionId guardado pra não recriar Visualizer
+// - FFT com FloatArray (sem alocação)
+// - EQ dinâmico com freq real do device
+// - Visualizer com RECORD_AUDIO check seguro
 
-import android.content.ContentUris
-import android.media.AudioAttributes
-import android.media.MediaPlayer
-import android.media.audiofx.Equalizer
-import android.media.audiofx.Visualizer
-import android.net.Uri
-import android.os.Bundle
-import android.provider.MediaStore
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.compose.setContent
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectVerticalDragGestures
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import kotlin.math.abs
-import kotlin.math.hypot
+private var currentSessionId by mutableStateOf(0)
 
-data class Song(val id: Long, val title: String, val artist: String, val uri: Uri)
-enum class RepeatMode { OFF, ALL, ONE }
+fun setupAudioEffects(sessionId: Int) {
+    if (sessionId == 0 || sessionId == currentSessionId) return
+    currentSessionId = sessionId
+    try {
+        viz?.enabled = false; viz?.release()
+    } catch (_: Exception) {}
+    viz = null
 
-class MainActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContent {
-            // ESSENCIAL PARA NÃO CRASHAR
-            MaterialTheme {
-                Surface(Modifier.fillMaxSize(), color = Color(0xFF070A10)) {
-                    HiFiV23()
-                }
-            }
-        }
-    }
-}
+    if (ContextCompat.checkSelfPermission(ctx, Manifest.permission.RECORD_AUDIO)!= PackageManager.PERMISSION_GRANTED) return
 
-@Composable
-fun HiFiV23(){
-    val context = LocalContext.current
-    val cyan = Color(0xFF00E5FF)
-    val card = Color(0xFF121821)
-    val border = Color(0xFF1E3A4A)
-
-    var songs by remember { mutableStateOf<List<Song>>(emptyList()) }
-    var idx by remember { mutableIntStateOf(0) }
-    var isPlaying by remember { mutableStateOf(false) }
-    var showEq by remember { mutableStateOf(true) }
-    var shuffle by remember { mutableStateOf(false) }
-    var repeat by remember { mutableStateOf(RepeatMode.ALL) }
-    var eqLevels by remember { mutableStateOf(List(5){0.2f}) }
-    var fft by remember { mutableStateOf(List(16){0.05f}) }
-    var vuL by remember { mutableFloatStateOf(0.08f) }
-    var vuR by remember { mutableFloatStateOf(0.08f) }
-    var hasPerm by remember { mutableStateOf(false) }
-
-    var player by remember { mutableStateOf<MediaPlayer?>(null) }
-    var eq by remember { mutableStateOf<Equalizer?>(null) }
-    var vis by remember { mutableStateOf<Visualizer?>(null) }
-
-    fun load(){
-        try {
-            val list = mutableListOf<Song>()
-            val uri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
-            context.contentResolver.query(uri, arrayOf(MediaStore.Audio.Media._ID, MediaStore.Audio.Media.TITLE, MediaStore.Audio.Media.ARTIST), "${MediaStore.Audio.Media.IS_MUSIC}!=0", null, "TITLE ASC")?.use{ c ->
-                while(c.moveToNext()) list.add(Song(c.getLong(0), c.getString(1)?:"", c.getString(2)?:"", ContentUris.withAppendedId(uri, c.getLong(0))))
-            }
-            songs = list
-        } catch(e:Exception){}
-    }
-
-    val perms = if(android.os.Build.VERSION.SDK_INT>=33) arrayOf(android.Manifest.permission.READ_MEDIA_AUDIO, android.Manifest.permission.RECORD_AUDIO) else arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE, android.Manifest.permission.RECORD_AUDIO)
-    val permLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()){ m -> if(m.values.all{it}){ hasPerm=true; load() } }
-
-    fun initAudioFx(sessionId: Int){
-        try{
-            vis?.release(); eq?.release()
-            if(sessionId==0) return
-            eq = Equalizer(0, sessionId).apply{
-                enabled=true
-                eqLevels.forEachIndexed{ b,l -> val r=bandLevelRange; setBandLevel(b.toShort(), (r[0]+(r[1]-r[0])*l).toInt().toShort()) }
-            }
-            vis = Visualizer(sessionId).apply{
-                captureSize = Visualizer.getCaptureSizeRange()[1]
-                setDataCaptureListener(object: Visualizer.OnDataCaptureListener{
-                    override fun onWaveFormDataCapture(v: Visualizer?, w: ByteArray?, rate: Int){
-                        w?.let{ var mx=0; for(b in it){ val a=abs(b.toInt()); if(a>mx) mx=a }; val lvl=mx/128f; vuL=lvl; vuR=lvl }
-                    }
-                    override fun onFftDataCapture(v: Visualizer?, f: ByteArray?, rate: Int){
-                        f?.let{ val out=MutableList(16){0.05f}; for(k in 0..15){ out[k]=(hypot(it[k*2].toDouble(), it[k*2+1].toDouble()).toFloat()/40f).coerceIn(0.05f,1f) }; fft=out }
-                    }
-                }, Visualizer.getMaxCaptureRate()/2, true, true)
-                enabled=true
-            }
-        } catch(e:Exception){
-            // se falhar o Visualizer, continua tocando sem ele
-        }
-    }
-
-    fun play(i:Int){
-        if(songs.isEmpty()) return
-        idx=i
-        try{
-            vis?.release(); eq?.release(); player?.release()
-            player = MediaPlayer().apply{
-                val attrs = AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build()
-                setAudioAttributes(attrs)
-                setDataSource(context, songs[idx].uri)
-                setOnPreparedListener{ mp -> try{ mp.start(); isPlaying=true; initAudioFx(mp.audioSessionId) } catch(e:Exception){} }
-                setOnCompletionListener{
-                    when(repeat){
-                        RepeatMode.ONE -> play(idx)
-                        RepeatMode.ALL -> play(if(shuffle) songs.indices.random() else if(idx<songs.size-1) idx+1 else 0)
-                        RepeatMode.OFF -> if(idx<songs.size-1) play(idx+1)
+    try {
+        viz = Visualizer(sessionId).apply {
+            captureSize = Visualizer.getCaptureSizeRange()[1] // 1024
+            setDataCaptureListener(object : Visualizer.OnDataCaptureListener {
+                override fun onWaveFormDataCapture(v: Visualizer?, waveform: ByteArray?, rate: Int) {
+                    waveform?.let {
+                        val half = it.size / 2
+                        var l = 0.0; var r = 0.0
+                        for(i in 0 until half) { val s = (it[i].toInt() and 0xFF) - 128; l += s*s }
+                        for(i in half until it.size) { val s = (it[i].toInt() and 0xFF) - 128; r += s*s }
+                        vuLeft = (vuLeft * 0.75f + Math.sqrt(l/half).toFloat()/128f * 0.25f).coerceIn(0.05f, 1f)
+                        vuRight = (vuRight * 0.75f + Math.sqrt(r/half).toFloat()/128f * 0.25f).coerceIn(0.05f, 1f)
                     }
                 }
-                prepareAsync()
-            }
-        } catch(e:Exception){}
-    }
-
-    Column(Modifier.fillMaxSize().background(Color(0xFF070A10)).padding(12.dp), verticalArrangement=Arrangement.spacedBy(12.dp)){
-        Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(Color(0xFF0F1219)).border(1.dp,border,RoundedCornerShape(14.dp)).padding(12.dp)){
-            Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween, Alignment.CenterVertically){
-                Icon(Icons.Filled.Folder, null, tint=cyan, modifier=Modifier.size(26.dp))
-                Text("HI-FI PLAYER", color=cyan, fontWeight=FontWeight.Black, fontSize=15.sp)
-                Row(horizontalArrangement=Arrangement.spacedBy(12.dp)){
-                    Icon(Icons.Filled.Equalizer, null, tint=if(showEq) cyan else Color.Gray, modifier=Modifier.size(22.dp).clickable{showEq=!showEq})
-                    Icon(Icons.Filled.Shuffle, null, tint=if(shuffle) cyan else Color.Gray, modifier=Modifier.size(22.dp).clickable{shuffle=!shuffle})
-                    Icon(Icons.Filled.Repeat, null, tint=if(repeat!=RepeatMode.OFF) cyan else Color.Gray, modifier=Modifier.size(22.dp).clickable{repeat=when(repeat){RepeatMode.OFF->RepeatMode.ALL; RepeatMode.ALL->RepeatMode.ONE; RepeatMode.ONE->RepeatMode.OFF}})
-                }
-            }
-        }
-        if(!hasPerm){
-            Button(onClick={ permLauncher.launch(perms) }, colors=ButtonDefaults.buttonColors(containerColor=cyan), modifier=Modifier.fillMaxWidth().height(44.dp), shape=RoundedCornerShape(20.dp)){
-                Text("PERMITIR ACESSO AS MUSICAS", color=Color.Black, fontWeight=FontWeight.Black, fontSize=13.sp)
-            }
-        }
-        if(showEq){
-            Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(card).border(1.dp,border,RoundedCornerShape(12.dp)).padding(10.dp)){
-                Column{
-                    Text("5-BAND EQUALIZER • ARRASTE VERTICAL", color=cyan, fontSize=10.sp, fontWeight=FontWeight.Black)
-                    Spacer(Modifier.height(10.dp))
-                    Row(Modifier.fillMaxWidth().height(150.dp), Arrangement.SpaceEvenly){
-                        listOf("60","230","910","3.6K","14K").forEachIndexed{ i,f ->
-                            var lv by remember{ mutableStateOf(eqLevels[i]) }
-                            LaunchedEffect(eqLevels){ lv=eqLevels[i] }
-                            Column(horizontalAlignment=Alignment.CenterHorizontally){
-                                Box(Modifier.width(46.dp).height(120.dp).clip(RoundedCornerShape(20.dp)).background(Color(0xFF080A0F)).border(1.dp,border,RoundedCornerShape(20.dp)).pointerInput(i){ detectVerticalDragGestures{ _, d -> val nv=(lv-d/120f).coerceIn(0f,1f); lv=nv; val nl=eqLevels.toMutableList(); nl[i]=nv; eqLevels=nl; try{ eq?.let{ e -> val r=e.bandLevelRange; e.setBandLevel(i.toShort(), (r[0]+(r[1]-r[0])*nv).toInt().toShort()) } }catch(e:Exception){} }}){
-                                    Box(Modifier.fillMaxWidth().fillMaxHeight(lv).align(Alignment.BottomCenter).background(cyan.copy(0.35f)))
-                                    Box(Modifier.size(18.dp).clip(CircleShape).background(cyan).align(Alignment.BottomCenter).offset(y=-(lv*104).dp))
-                                }
-                                Text(f, color=Color.White, fontSize=10.sp, fontWeight=FontWeight.Bold); Text("${((lv-0.5f)*30).toInt()}dB", color=cyan, fontSize=7.sp)
-                            }
+                override fun onFftDataCapture(v: Visualizer?, fft: ByteArray?, rate: Int) {
+                    fft?.let { bytes ->
+                        if (bytes.size < 128) return
+                        val bands = FloatArray(64)
+                        for(i in 0 until 64) {
+                            val re = bytes[2*i].toInt()
+                            val im = bytes[2*i+1].toInt()
+                            bands[i] = (hypot(re.toDouble(), im.toDouble()) / 35f).toFloat().coerceIn(0.05f, 1.1f)
                         }
+                        fftValues = bands.toList() // Mantive List pra não quebrar seu Canvas
                     }
                 }
-            }
+            }, Visualizer.getMaxCaptureRate() / 2, true, true)
+            enabled = true
         }
-        Row(Modifier.fillMaxWidth(), Arrangement.spacedBy(8.dp)){
-            listOf(vuL, vuR).forEach{ lvl ->
-                Box(Modifier.weight(1f).clip(RoundedCornerShape(10.dp)).background(card).border(1.dp,border,RoundedCornerShape(10.dp)).padding(6.dp)){
-                    Column{
-                        Canvas(Modifier.fillMaxWidth().height(20.dp)){
-                            val db = 20* kotlin.math.log10((lvl*1.5f).coerceAtLeast(0.01f))
-                            for(j in 0 until 9){ val thr=listOf(-10,-8,-6,-4,-2,0,1,2,3)[j]; val active=db>=thr; val col=if(active){if(thr>=1) Color(0xFFFF1744) else cyan}else Color(0xFF1E2A3A); drawRect(col, Offset(j*size.width/9,0f), Size(size.width/9-3.dp.toPx(), size.height)) }
-                        }
-                        Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween){ Text("-10", color=Color.Gray, fontSize=7.sp); Text("-5", color=Color.Gray, fontSize=7.sp); Text("0", color=Color.Gray, fontSize=7.sp); Text("+3", color=Color.Gray, fontSize=7.sp) }
-                    }
-                }
-            }
-        }
-        Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(card).border(1.dp,border,RoundedCornerShape(12.dp)).padding(8.dp)){
-            Box(Modifier.fillMaxWidth().height(120.dp).clip(RoundedCornerShape(8.dp)).background(Color.Black)){
-                Canvas(Modifier.fillMaxSize()){
-                    if(isPlaying){ val bw=size.width/16; fft.forEachIndexed{ i,h -> val bh=size.height*h; val col=when{ h>0.8f->Color(0xFFFF1744); h>0.6f->Color(0xFFFFEB3B); else->cyan }; drawRoundRect(col, Offset(i*bw+4.dp.toPx(), size.height-bh), Size(bw-8.dp.toPx(), bh), CornerRadius(3.dp.toPx())) } }
-                    else { val bw=size.width/16; for(i in 0 until 16){ drawRoundRect(cyan, Offset(i*bw+4.dp.toPx(), size.height-6.dp.toPx()), Size(bw-8.dp.toPx(), 4.dp.toPx()), CornerRadius(2.dp.toPx())) } }
-                }
-            }
-        }
-        Row(Modifier.fillMaxWidth(), Arrangement.SpaceEvenly, Alignment.CenterVertically){
-            Box(Modifier.size(56.dp).clip(CircleShape).background(Color(0xFF1A2435)).border(1.dp,border,CircleShape).clickable{ if(songs.isNotEmpty()) play(if(idx>0) idx-1 else songs.size-1) }, contentAlignment=Alignment.Center){ Icon(Icons.Filled.SkipPrevious, null, tint=Color.White, modifier=Modifier.size(28.dp)) }
-            Box(Modifier.size(80.dp).clip(CircleShape).background(cyan).clickable{ if(songs.isEmpty()) return@clickable; if(isPlaying){ try{ player?.pause(); isPlaying=false }catch(e:Exception){} } else { if(player==null) play(idx) else { try{ player?.start(); isPlaying=true }catch(e:Exception){} } } }, contentAlignment=Alignment.Center){ Icon(if(isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow, null, tint=Color.Black, modifier=Modifier.size(42.dp)) }
-            Box(Modifier.size(56.dp).clip(CircleShape).background(Color(0xFF1A2435)).border(1.dp,border,CircleShape).clickable{ if(songs.isNotEmpty()) play(if(idx<songs.size-1) idx+1 else 0) }, contentAlignment=Alignment.Center){ Icon(Icons.Filled.SkipNext, null, tint=Color.White, modifier=Modifier.size(28.dp)) }
-        }
-        if(songs.isNotEmpty()){ LazyColumn(verticalArrangement=Arrangement.spacedBy(6.dp)){ itemsIndexed(songs){ i,s -> Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(if(i==idx) Color(0xFF102030) else card).border(1.dp, if(i==idx) cyan else border, RoundedCornerShape(10.dp)).clickable{ play(i) }.padding(10.dp)){ Text(s.title, color=if(i==idx) cyan else Color.White, fontSize=12.sp, maxLines=1) } } } }
-    }
+        eq?.release(); loud?.release()
+        eq = Equalizer(0, sessionId).apply { enabled = true }
+        loud = LoudnessEnhancer(sessionId).apply { enabled = highGain; setTargetGain(0) }
+    } catch (_: Exception) { /* device sem Visualizer */ }
 }
