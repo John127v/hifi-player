@@ -1,248 +1,241 @@
-27s
-Run gradle assembleDebug --no-daemon
-To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.5/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
-Daemon will be stopped at the end of the build 
-> Task :app:preBuild UP-TO-DATE
-> Task :app:preDebugBuild UP-TO-DATE
-> Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
-> Task :app:generateDebugResValues
-> Task :app:checkDebugAarMetadata
-> Task :app:mapDebugSourceSetPaths
-> Task :app:generateDebugResources
-> Task :app:packageDebugResources
-> Task :app:createDebugCompatibleScreenManifests
-> Task :app:extractDeepLinksDebug
-> Task :app:mergeDebugResources
-> Task :app:parseDebugLocalResources
-> Task :app:processDebugMainManifest
-> Task :app:processDebugManifest
-> Task :app:javaPreCompileDebug
-> Task :app:mergeDebugShaders
-> Task :app:compileDebugShaders NO-SOURCE
-> Task :app:generateDebugAssets UP-TO-DATE
-> Task :app:mergeDebugAssets
-> Task :app:processDebugManifestForPackage
-> Task :app:compressDebugAssets
-> Task :app:desugarDebugFileDependencies
-> Task :app:mergeDebugJniLibFolders
-> Task :app:checkDebugDuplicateClasses
-> Task :app:mergeDebugNativeLibs NO-SOURCE
-> Task :app:processDebugResources
-> Task :app:stripDebugDebugSymbols NO-SOURCE
-> Task :app:mergeLibDexDebug
-> Task :app:validateSigningDebug
-> Task :app:writeDebugAppMetadata
-> Task :app:writeDebugSigningConfigVersions
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:1:1 Expecting a top level declaration
+package com.whitelabel.hifiplayer
 
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:1:2 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:1:3 Expecting a top level declaration
-> Task :app:compileDebugKotlin
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:1:7 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:1:14 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:1:15 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:1:16 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:1:19 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:1:21 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:1:29 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:1:30 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:1:31 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:1:36 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:1:37 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:1:38 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:2:1 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:2:2 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:2:11 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:2:16 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:2:17 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:2:24 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:2:25 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:2:26 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:2:68 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:2:69 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:4:5 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:4:6 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:4:7 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:4:10 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:4:21 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:4:24 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:4:30 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:4:32 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:4:40 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:4:43 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:4:57 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:4:59 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:5:5 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:5:6 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:5:10 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:5:11 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:5:22 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:5:29 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:5:30 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:5:34 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:5:35 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:5:36 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:5:67 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:5:69 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:5:70 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:6:5 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:6:6 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:6:10 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:6:11 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:6:22 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:6:29 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:6:30 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:6:34 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:6:35 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:6:36 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:6:76 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:6:78 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:6:85 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:6:86 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:6:99 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:6:100 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:6:101 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:6:103 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:6:105 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:6:106 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:7:5 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:7:6 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:7:10 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:7:11 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:7:22 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:7:29 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:7:30 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:7:34 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:7:35 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:7:36 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:7:71 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:7:73 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:7:74 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:9:5 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:9:6 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:10:9 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:10:16 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:10:17 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:10:28 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:10:29 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:10:30 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:10:34 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:11:9 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:11:16 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:11:17 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:11:21 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:11:22 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:11:23 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:11:57 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:12:9 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:12:16 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:12:17 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:12:22 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:12:23 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:12:24 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:12:35 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:13:9 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:13:16 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:13:17 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:13:28 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:13:29 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:13:30 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:13:34 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:14:9 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:14:16 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:14:17 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:14:22 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:14:23 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:14:24 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:14:65 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:14:66 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:16:9 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:16:10 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:17:13 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:17:20 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:17:21 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:17:25 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:17:26 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:17:27 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:17:40 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:18:13 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:18:20 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:18:21 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:18:29 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:18:30 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:18:31 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:18:35 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:19:13 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:19:20 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:19:21 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:19:26 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:19:27 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:19:28 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:19:69 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:19:70 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:20:13 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:20:14 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:20:20 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:20:21 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:20:27 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:21:17 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:21:18 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:21:25 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:21:32 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:21:33 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:21:37 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:21:38 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:21:39 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:21:65 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:21:67 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:21:68 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:22:17 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:22:18 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:22:27 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:22:34 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:22:35 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:22:39 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:22:40 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:22:41 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:22:73 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:22:75 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:22:76 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:23:13 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:23:14 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:23:15 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:23:21 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:23:22 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:23:28 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:24:9 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:24:10 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:24:11 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:24:19 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:25:5 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:25:6 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:25:7 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:25:18 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:27:1 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:27:2 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:27:3 Expecting a top level declaration
-e: file:///home/runner/work/hifi-player/hifi-player/app/src/main/java/com/example/hifiplayer/MainActivity.kt:27:11 Expecting a top level declaration
+import android.Manifest
+import android.content.ContentUris
+import android.content.pm.PackageManager
+import android.media.MediaPlayer
+import android.media.audiofx.Equalizer
+import android.media.audiofx.Visualizer
+import android.net.Uri
+import android.os.Build
+import android.os.Bundle
+import android.provider.MediaStore
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
+import kotlin.math.hypot
 
-> Task :app:compileDebugKotlin FAILED
-> Task :app:mergeExtDexDebug
+data class Song(val id: Long, val title: String, val uri: Uri)
 
-gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run-1787947368769.json
-25 actionable tasks: 25 executed
-FAILURE: Build failed with an exception.
+enum class RepeatMode { OFF, ALL, ONE }
 
-* What went wrong:
-Execution failed for task ':app:compileDebugKotlin'.
-> A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
-   > Compilation error. See log for more details
+class MainActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContent { HiFiPlayerApp() }
+    }
+}
 
-* Try:
-> Run with --stacktrace option to get the stack trace.
-> Run with --info or --debug option to get more log output.
-> Run with --scan to get full insights.
-> Get more help at https://help.gradle.org.
+@Composable
+fun HiFiPlayerApp() {
+    val context = LocalContext.current
+    val cyanNeon = Color(0xFF00E5FF)
+    val cardBg = Color(0xFF121821)
+    val borderNeon = Color(0xFF1E3A4A)
 
-BUILD FAILED in 27s
-Error: Process completed with exit code 1.
+    var songs by remember { mutableStateOf<List<Song>>(emptyList()) }
+    var idx by remember { mutableIntStateOf(0) }
+    var isPlaying by remember { mutableStateOf(false) }
+    var showEq by remember { mutableStateOf(false) }
+    var shuffleMode by remember { mutableStateOf(false) }
+    var repeatMode by remember { mutableStateOf(RepeatMode.OFF) }
+    var eqLevels by remember { mutableStateOf(List(5){0.5f}) }
+    var fftValues by remember { mutableStateOf(List(64){0.05f}) }
+    var vuLeft by remember { mutableFloatStateOf(0.1f) }
+    var vuRight by remember { mutableFloatStateOf(0.1f) }
+    var player by remember { mutableStateOf<MediaPlayer?>(null) }
+    var equalizer by remember { mutableStateOf<Equalizer?>(null) }
+    var visualizer by remember { mutableStateOf<Visualizer?>(null) }
+
+    val permission = if(Build.VERSION.SDK_INT >= 33) Manifest.permission.READ_MEDIA_AUDIO else Manifest.permission.READ_EXTERNAL_STORAGE
+    var hasPerm by remember { mutableStateOf(ContextCompat.checkSelfPermission(context, permission)==PackageManager.PERMISSION_GRANTED) }
+    val permLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()){ hasPerm=it }
+
+    // CARREGAR MUSICAS DO CELULAR
+    fun loadMusics(){
+        val list = mutableListOf<Song>()
+        val uri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
+        val proj = arrayOf(MediaStore.Audio.Media._ID, MediaStore.Audio.Media.TITLE)
+        val sel = "${MediaStore.Audio.Media.IS_MUSIC}!= 0"
+        context.contentResolver.query(uri, proj, sel, null, "${MediaStore.Audio.Media.TITLE} ASC")?.use{ c ->
+            while(c.moveToNext()){
+                val id = c.getLong(0); val title = c.getString(1)
+                list.add(Song(id, title, ContentUris.withAppendedId(uri, id)))
+            }
+        }
+        songs = list
+        if(list.isEmpty()){
+            // Fallback se não achar
+            songs = listOf(Song(0,"Faixa 01 - White Label Mix", Uri.EMPTY), Song(1,"Faixa 02 - Deep Bass", Uri.EMPTY))
+        }
+    }
+
+    val folderLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()){ uri ->
+        uri?.let{ loadMusics() }
+    }
+
+    LaunchedEffect(hasPerm){ if(hasPerm) loadMusics() else permLauncher.launch(permission) }
+
+    fun playSong(i:Int){
+        if(songs.isEmpty()) return
+        idx=i
+        runCatching{
+            player?.release()
+            val s = songs[i]
+            player = MediaPlayer.create(context, s.uri).apply{
+                setOnCompletionListener{
+                    if(repeatMode==RepeatMode.ONE){ seekTo(0); start() }
+                    else { val n=if(idx<songs.size-1) idx+1 else 0; playSong(n) }
+                }
+                start()
+            }
+            isPlaying=true
+            // RECRIAR EQUALIZER E VISUALIZER COM SESSION NOVA
+            equalizer?.release()
+            visualizer?.release()
+            val session = player!!.audioSessionId
+            equalizer = Equalizer(0, session).apply{ enabled=true }
+            visualizer = Visualizer(session).apply{
+                captureSize=Visualizer.getCaptureSizeRange()[1]
+                setDataCaptureListener(object: Visualizer.OnDataCaptureListener{
+                    override fun onWaveFormDataCapture(v: Visualizer?, w: ByteArray?, r: Int){}
+                    override fun onFftDataCapture(v: Visualizer?, fft: ByteArray?, rate: Int){
+                        fft?.let{
+                            val bands=MutableList(64){0f}; var j=2
+                            for(k in bands.indices){ if(j>=it.size-1) break
+                                bands[k]=(hypot(it[j].toDouble(), it[j+1].toDouble())/28f).toFloat().coerceIn(0.05f,1.1f); j+=2
+                            }
+                            fftValues=bands
+                            vuLeft=(bands.take(8).average()*1.8).toFloat().coerceIn(0f,1f)
+                            vuRight=(bands.drop(8).take(8).average()*1.8).toFloat().coerceIn(0f,1f)
+                        }
+                    }
+                }, Visualizer.getMaxCaptureRate()/2, false, true); enabled=true
+            }
+        }
+    }
+
+    Column(Modifier.fillMaxSize().background(Color(0xFF070A10)).padding(12.dp), verticalArrangement=Arrangement.spacedBy(10.dp)){
+
+        // HEADER COM BOTAO ABRIR PASTA
+        Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(Color(0xFF0F1219)).border(1.dp,borderNeon,RoundedCornerShape(14.dp)).padding(12.dp)){
+            Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween, Alignment.CenterVertically){
+                Icon(Icons.Filled.Folder, "Abrir", tint=cyanNeon, modifier=Modifier.size(26.dp).clip(CircleShape).clickable{ folderLauncher.launch(null) }.padding(2.dp))
+                Text("HI-FI PLAYER", color=cyanNeon, fontSize=15.sp, fontWeight=FontWeight.Black)
+                Row(horizontalArrangement=Arrangement.spacedBy(10.dp)){
+                    Box(Modifier.clip(RoundedCornerShape(6.dp)).background(if(showEq) Color(0xFF102030) else Color.Transparent).border(1.dp, if(showEq) cyanNeon else Color(0xFF2A3445), RoundedCornerShape(6.dp)).clickable{showEq=!showEq}.padding(6.dp)){ Icon(Icons.Filled.Equalizer,"EQ", tint=if(showEq) cyanNeon else Color.Gray, modifier=Modifier.size(18.dp)) }
+                    Box(Modifier.clip(RoundedCornerShape(6.dp)).background(if(shuffleMode) Color(0xFF102030) else Color.Transparent).border(1.dp, if(shuffleMode) cyanNeon else Color(0xFF2A3445), RoundedCornerShape(6.dp)).clickable{shuffleMode=!shuffleMode}.padding(6.dp)){ Icon(Icons.Filled.Shuffle,"RND", tint=if(shuffleMode) cyanNeon else Color.Gray, modifier=Modifier.size(18.dp)) }
+                    Box(Modifier.clip(RoundedCornerShape(6.dp)).background(if(repeatMode!=RepeatMode.OFF) Color(0xFF102030) else Color.Transparent).border(1.dp, if(repeatMode!=RepeatMode.OFF) cyanNeon else Color(0xFF2A3445), RoundedCornerShape(6.dp)).clickable{ repeatMode=when(repeatMode){RepeatMode.OFF->RepeatMode.ALL; RepeatMode.ALL->RepeatMode.ONE; RepeatMode.ONE->RepeatMode.OFF}}.padding(6.dp)){ Icon(Icons.Filled.Repeat,"REP", tint=if(repeatMode!=RepeatMode.OFF) cyanNeon else Color.Gray, modifier=Modifier.size(18.dp)) }
+                }
+            }
+        }
+
+        if(!hasPerm){
+            Button(onClick={permLauncher.launch(permission)}, colors=ButtonDefaults.buttonColors(containerColor=cyanNeon)){ Text("PERMITIR ACESSO AS MUSICAS", color=Color.Black, fontWeight=FontWeight.Black) }
+        }
+
+        // EQ VERTICAL COM DESLOCAMENTO TOTAL - CORRIGIDO
+        if(showEq){
+            Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(cardBg).border(1.dp,borderNeon,RoundedCornerShape(12.dp)).padding(12.dp)){
+                Column{
+                    Text("5-BAND EQUALIZER • ARRASTE VERTICAL", color=cyanNeon, fontSize=10.sp, fontWeight=FontWeight.Black)
+                    Spacer(Modifier.height(16.dp))
+                    Row(Modifier.fillMaxWidth().height(160.dp), horizontalArrangement=Arrangement.SpaceEvenly){
+                        val freqs=listOf("60","230","910","3.6K","14K")
+                        freqs.forEachIndexed{ i,f ->
+                            var level by remember{ mutableStateOf(eqLevels[i]) }
+                            Column(horizontalAlignment=Alignment.CenterHorizontally){
+                                // SLIDER VERTICAL REAL COM 100% DE DESLOCAMENTO
+                                Box(Modifier.width(40.dp).height(120.dp).clip(RoundedCornerShape(20.dp)).background(Color(0xFF080A0F)).border(1.dp, borderNeon, RoundedCornerShape(20.dp))
+                                   .pointerInput(i){
+                                        detectVerticalDragGestures{ _, dragAmount ->
+                                            val newVal = (level - dragAmount/120f).coerceIn(0f,1f)
+                                            level=newVal
+                                            val newList=eqLevels.toMutableList(); newList[i]=newVal; eqLevels=newList
+                                            equalizer?.let{ eq ->
+                                                if(i<eq.numberOfBands){
+                                                    val r=eq.bandLevelRange
+                                                    eq.setBandLevel(i.toShort(), (r[0] + (r[1]-r[0])*newVal).toInt().toShort())
+                                                }
+                                            }
+                                        }
+                                    }
+                                ){
+                                    Box(Modifier.fillMaxWidth().fillMaxHeight(level).align(Alignment.BottomCenter).background(cyanNeon.copy(alpha=0.3f)))
+                                    Box(Modifier.fillMaxWidth().height(4.dp).background(cyanNeon).align(Alignment.BottomCenter).offset(y=-(level*116).dp))
+                                    Box(Modifier.size(18.dp).clip(CircleShape).background(cyanNeon).align(Alignment.BottomCenter).offset(y=-(level*112).dp))
+                                }
+                                Spacer(Modifier.height(6.dp))
+                                Text(f, color=Color.White, fontSize=9.sp, fontWeight=FontWeight.Bold)
+                                Text("${((level-0.5f)*30).toInt()}dB", color=cyanNeon, fontSize=7.sp)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // VU + SPECTRUM 16
+        Row(Modifier.fillMaxWidth(), horizontalArrangement=Arrangement.spacedBy(8.dp)){
+            listOf("L" to vuLeft, "R" to vuRight).forEach{ (ch, lv) ->
+                Box(Modifier.weight(1f).clip(RoundedCornerShape(12.dp)).background(cardBg).border(1.dp,borderNeon,RoundedCornerShape(12.dp)).padding(8.dp)){
+                    Column{
+                        Canvas(Modifier.fillMaxWidth().height(22.dp)){
+                            val steps=listOf(-10,-7,-5,-3,-1,0,1,2,3); val w=size.width/steps.size
+                            steps.forEachIndexed{ idx2,v -> val active=(lv*13-10)>=v; drawRect(if(active){if(v>=0) Color(0xFFFF1744) else cyanNeon}else Color(0xFF1E2A3A), topLeft=Offset(idx2*w,0f), size=Size(w-2.dp.toPx(), size.height)) }
+                        }
+                        Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween){ listOf("-10","-5","0","+3").forEach{ Text(it, color=Color.Gray, fontSize=7.sp)} }
+                    }
+                }
+            }
+        }
+
+        Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(cardBg).border(1.dp,borderNeon,RoundedCornerShape(12.dp)).padding(8.dp)){
+            Box(Modifier.fillMaxWidth().height(110.dp).clip(RoundedCornerShape(6.dp)).background(Color(0xFF080A0F))){
+                Canvas(Modifier.fillMaxSize()){
+                    val bands=16; val barW=size.width/bands
+                    val grouped=List(bands){ b -> val s=b*fftValues.size/bands; val e=(b+1)*fftValues.size/bands; fftValues.subList(s,e.coerceAtMost(fftValues.size)).maxOrNull()?:0.05f }
+                    grouped.forEachIndexed{ i,h -> val bh=size.height*h.coerceIn(0.05f,1f); val col=when{ h>0.9f->Color(0xFFFF1744); h>0.72f->Color(0xFFFFEB3B); else->cyanNeon }; drawRoundRect(col, topLeft=Offset(i*barW+3.dp.toPx(), size.height-bh), size=Size(barW-6.dp.toPx(), bh), cornerRadius=CornerRadius(2.dp.toPx())) }
+                }
+            }
+        }
+
+        Row(Modifier.fillMaxWidth(), Arrangement.SpaceEvenly, Alignment.CenterVertically){
+            Box(Modifier.size(54.dp).clip(CircleShape).background(Color(0xFF1A2435)).border(1.dp,borderNeon,CircleShape).clickable{ if(songs.isNotEmpty()) playSong(if(idx>0) idx-1 else songs.size-1) }, contentAlignment=Alignment.Center){ Icon(Icons.Filled.SkipPrevious,"Prev", tint=Color.White, modifier=Modifier.size(30.dp)) }
+            Box(Modifier.size(74.dp).clip(CircleShape).background(cyanNeon).clickable{ player?.let{ if(isPlaying){ it.pause(); isPlaying=false } else { it.start(); isPlaying=true } } }, contentAlignment=Alignment.Center){ Icon(if(isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,"Play", tint=Color.Black, modifier=Modifier.size(38.dp)) }
+            Box(Modifier.size(54.dp).clip(CircleShape).background(Color(0xFF1A2435)).border(1.dp,borderNeon,CircleShape).clickable{ if(songs.isNotEmpty()) playSong(if(idx<songs.size-1) idx+1 else 0) }, contentAlignment=Alignment.Center){ Icon(Icons.Filled.SkipNext,"Next", tint=Color.White, modifier=Modifier.size(30.dp)) }
+        }
+
+        LazyColumn(verticalArrangement=Arrangement.spacedBy(6.dp)){
+            itemsIndexed(songs){ i,s -> Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(if(i==idx) Color(0xFF102030) else cardBg).border(1.dp, if(i==idx) cyanNeon else borderNeon, RoundedCornerShape(10.dp)).clickable{ playSong(i) }.padding(12.dp)){ Text(s.title, color=if(i==idx) cyanNeon else Color.White, fontSize=13.sp) } }
+        }
+    }
+}
